@@ -5,9 +5,13 @@ Para crear un virtual environment se puede usar Pycharm que automaticamente gene
 ```
 python -m venv venv
 ```
-Luego usando el comando:
+Luego usando el comando en Windows:
 ```
 .venv/Scripts/Activate
+```
+O en Linux:
+```
+source /.venv/bin/activate
 ```
 Para luego instalar los paquetes necesarios.
 
