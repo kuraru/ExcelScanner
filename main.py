@@ -1,6 +1,11 @@
+import datetime
+import itertools
+import math
+
 import easyocr
 
 MIN_POINTS_PER_LINE = 15
+STOP_WORDS = ["CONCLUIDO"]
 
 
 def separate_by_line(ocr_output: list) -> list:
@@ -46,16 +51,31 @@ def create_string_data(data: list):
     f.close()
 
 
-def create_string_data_2(data: list):
+def get_nearest_stop(data: list[str]) -> int:
+    positions = []
+    for word in STOP_WORDS:
+        print(word)
+        pos = data.index(word)
+        print(pos)
+        positions.append(pos)
+    return min(positions)
+
+
+def create_string_data_2(data: list[str]) -> None:
     itemLineStr = ''
     countItemsLine = 0
     local_data = data
     with open("data.csv", "w") as f:
         while len(local_data) > 0:
-            items = local_data[:4]
+            try:
+                pos = get_nearest_stop(local_data)
+                print("pos: ", pos)
+                items = local_data[:pos + 1]
+            except ValueError:
+                items = local_data
             this_line = ",".join(items) + "\n"
             f.write(f"{this_line}")
-            local_data = local_data[4:]
+            local_data = local_data[pos+1:]
 
 
 # Create an OCR reader object
@@ -83,14 +103,10 @@ rawData = data[15:lastIndex]
 #Headers formato unico para la remision de documentos base de la accion en materia civil
 rawHeaders =['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
 newRawData = removeHeaders(rawHeaders, rawData)
+newRawData = list(itertools.filterfalse(lambda x: x == "", newRawData))
+newRawData = [element.replace(",", "") for element in newRawData]
+# print(newRawData)
 c = open('newRawData.txt', 'w')
 c.write(','.join(newRawData))
 c.close()
-#print(newRawData)
 create_string_data_2(newRawData)
-
-
-
-
-
-
