@@ -30,7 +30,7 @@ def create_string_data(data: list):
     f = open("data.csv", "w")
     for dataItem in data:
         print(dataItem)
-        if(countItemsLine == 0 and countItemsLine == 4):
+        if(countItemsLine == 0 or countItemsLine == 4):
             itemLineStr = '' + dataItem
             countItemsLine += 1
         elif(countItemsLine > 0 and countItemsLine <= 3):
@@ -44,6 +44,19 @@ def create_string_data(data: list):
             itemLineStr = ''
         print(itemLineStr)
     f.close()
+
+
+def create_string_data_2(data: list):
+    itemLineStr = ''
+    countItemsLine = 0
+    local_data = data
+    with open("data.csv", "w") as f:
+        while len(local_data) > 0:
+            items = local_data[:4]
+            this_line = ",".join(items) + "\n"
+            f.write(f"{this_line}")
+            local_data = local_data[4:]
+
 
 # Create an OCR reader object
 reader = easyocr.Reader(['es'])
@@ -74,7 +87,7 @@ c = open('newRawData.txt', 'w')
 c.write(','.join(newRawData))
 c.close()
 #print(newRawData)
-create_string_data(newRawData)
+create_string_data_2(newRawData)
 
 
 
