@@ -1,11 +1,16 @@
 import datetime
 import itertools
 import math
+import re
 
 import easyocr
 
 MIN_POINTS_PER_LINE = 15
 STOP_WORDS = ["CONCLUIDO"]
+START_FORMATS = ["^[0-9].*/[0-9].*$"]
+
+#Headers formato unico para la remision de documentos base de la accion en materia civil
+rawHeaders =['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
 
 
 def separate_by_line(ocr_output: list) -> list:
@@ -61,21 +66,38 @@ def get_nearest_stop(data: list[str]) -> int:
     return min(positions)
 
 
+def get_nearest_start(data: list[str]) -> int:
+    positions = []
+    for format in START_FORMATS:
+        print(format)
+        pos = 0
+        for string in data:
+            if re.search(format, string):
+               return pos
+            pos += 1
+    raise ValueError("Regex did not find anything.")
+
+
 def create_string_data_2(data: list[str]) -> None:
-    itemLineStr = ''
-    countItemsLine = 0
     local_data = data
     with open("data.csv", "w") as f:
+        f.write(",".join(rawHeaders) + "\n")
         while len(local_data) > 0:
             try:
                 pos = get_nearest_stop(local_data)
                 print("pos: ", pos)
-                items = local_data[:pos + 1]
+                if pos > 5:
+                    pos = get_nearest_start(local_data)
+                    items = local_data[:pos]
+                    local_data = local_data[pos:]
+                else:
+                    items = local_data[:pos + 1]
+                    local_data = local_data[pos + 1:]
             except ValueError:
                 items = local_data
+                local_data = []
             this_line = ",".join(items) + "\n"
             f.write(f"{this_line}")
-            local_data = local_data[pos+1:]
 
 
 # Create an OCR reader object
@@ -100,8 +122,6 @@ rawData = data[15:lastIndex]
 #print(header)
 #print(rawData)
 
-#Headers formato unico para la remision de documentos base de la accion en materia civil
-rawHeaders =['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
 newRawData = removeHeaders(rawHeaders, rawData)
 newRawData = list(itertools.filterfalse(lambda x: x == "", newRawData))
 newRawData = [element.replace(",", "") for element in newRawData]
