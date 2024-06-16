@@ -1,7 +1,7 @@
-import datetime
 import itertools
-import math
+import os
 import re
+from typing import Optional, TextIO
 
 import easyocr
 
@@ -10,7 +10,8 @@ STOP_WORDS = ["CONCLUIDO"]
 START_FORMATS = ["^[0-9].*/[0-9].*$"]
 
 #Headers formato unico para la remision de documentos base de la accion en materia civil
-rawHeaders =['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
+rawHeaders = ['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
+newHeaders = ['EXPEDIENTE', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO', 'PADDING', 'NÚM DE SOBRES']
 
 
 def separate_by_line(ocr_output: list) -> list:
@@ -72,61 +73,85 @@ def get_nearest_start(data: list[str]) -> int:
         print(format)
         pos = 0
         for string in data:
+            if pos == 0:
+                pos += 1
+                continue
             if re.search(format, string):
-               return pos
+                return pos
             pos += 1
     raise ValueError("Regex did not find anything.")
 
 
-def create_string_data_2(data: list[str]) -> None:
+def write_row(file: TextIO, line: list[str]) -> None:
+    this_line = ",".join(line)
+    this_line += "," * (len(newHeaders) - len(line)) + "1" + "\n"
+    file.write(this_line)
+
+
+def create_string_data_2(data: list[str], page: Optional[int]=0) -> None:
     local_data = data
     with open("data.csv", "w") as f:
-        f.write(",".join(rawHeaders) + "\n")
+        f.write(",".join(newHeaders) + "\n")
         while len(local_data) > 0:
             try:
                 pos = get_nearest_stop(local_data)
                 print("pos: ", pos)
                 if pos > 5:
                     pos = get_nearest_start(local_data)
-                    items = local_data[:pos]
-                    local_data = local_data[pos:]
+                    if pos:
+                        items = local_data[:pos]
+                        local_data = local_data[pos:]
+                    else:
+                        items = [f"Fin de pagina numero: {page}"]
+                        local_data = []
                 else:
                     items = local_data[:pos + 1]
                     local_data = local_data[pos + 1:]
             except ValueError:
-                items = local_data
+                items = [f"Fin de pagina numero: {page}"]
                 local_data = []
-            this_line = ",".join(items) + "\n"
-            f.write(f"{this_line}")
+            write_row(f, items)
 
 
-# Create an OCR reader object
-reader = easyocr.Reader(['es'])
+def run_all_over_dir(dir: str, reader: easyocr.Reader) -> None:
+    files = next(os.walk(dir), (None, None, []))[2]
 
-# Read text from an image
-result = reader.readtext('20231009-181355-189-01.jpg')
+    file_num = 0
+    for file in files:
+        f_result = reader.readtext(file)
 
-# Print the extracted text
-#for detection in result:
-    #print(detection[0], detection[1], detection[2])
-    #print('detection%', detection)
+        lines = separate_by_line(f_result)
+        data = lines[0]
 
-lines = separate_by_line(result)
-data = lines[0]
-#print(data)
 
-header = data[0:14]
-lastIndex = (len(data) + 1)
-#print(lastIndex)
-rawData = data[15:lastIndex]
-#print(header)
-#print(rawData)
+if __name__ == "__main__":
+    # Create an OCR reader object
+    reader = easyocr.Reader(['es'])
 
-newRawData = removeHeaders(rawHeaders, rawData)
-newRawData = list(itertools.filterfalse(lambda x: x == "", newRawData))
-newRawData = [element.replace(",", "") for element in newRawData]
-# print(newRawData)
-c = open('newRawData.txt', 'w')
-c.write(','.join(newRawData))
-c.close()
-create_string_data_2(newRawData)
+    # Read text from an image
+    result = reader.readtext('20231009-181355-189-01.jpg')
+
+    # Print the extracted text
+    #for detection in result:
+        #print(detection[0], detection[1], detection[2])
+        #print('detection%', detection)
+
+    lines = separate_by_line(result)
+    data = lines[0]
+    #print(data)
+
+    header = data[0:14]
+    # lastIndex = (len(data) + 1)
+    #print(lastIndex)
+    rawData = data[15:-1]
+    #print(header)
+    #print(rawData)
+
+    newRawData = removeHeaders(rawHeaders, rawData)
+    newRawData = list(itertools.filterfalse(lambda x: x == "", newRawData))
+    newRawData = [element.replace(",", "") for element in newRawData]
+    # print(newRawData)
+    c = open('newRawData.txt', 'w')
+    c.write(','.join(newRawData))
+    c.close()
+    create_string_data_2(newRawData, page=0)
