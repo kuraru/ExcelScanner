@@ -1,6 +1,7 @@
 import itertools
 import os
 import re
+import sys
 from typing import Optional, TextIO
 
 import easyocr
@@ -88,70 +89,58 @@ def write_row(file: TextIO, line: list[str]) -> None:
     file.write(this_line)
 
 
-def create_string_data_2(data: list[str], page: Optional[int]=0) -> None:
+def create_string_data_2(data: list[str], f: TextIO, page: Optional[int]=0) -> None:
     local_data = data
-    with open("data.csv", "w") as f:
-        f.write(",".join(newHeaders) + "\n")
-        while len(local_data) > 0:
-            try:
-                pos = get_nearest_stop(local_data)
-                print("pos: ", pos)
-                if pos > 5:
-                    pos = get_nearest_start(local_data)
-                    if pos:
-                        items = local_data[:pos]
-                        local_data = local_data[pos:]
-                    else:
-                        items = [f"Fin de pagina numero: {page}"]
-                        local_data = []
+    f.write(",".join(newHeaders) + "\n")
+    while len(local_data) > 0:
+        try:
+            pos = get_nearest_stop(local_data)
+            print("pos: ", pos)
+            if pos > 5:
+                pos = get_nearest_start(local_data)
+                if pos:
+                    items = local_data[:pos]
+                    local_data = local_data[pos:]
                 else:
-                    items = local_data[:pos + 1]
-                    local_data = local_data[pos + 1:]
-            except ValueError:
-                items = [f"Fin de pagina numero: {page}"]
-                local_data = []
-            write_row(f, items)
+                    items = [f"Fin de pagina numero: {page}"]
+                    local_data = []
+            else:
+                items = local_data[:pos + 1]
+                local_data = local_data[pos + 1:]
+        except ValueError:
+            items = [f"Fin de pagina numero: {page}"]
+            local_data = []
+        write_row(f, items)
 
 
 def run_all_over_dir(dir: str, reader: easyocr.Reader) -> None:
     files = next(os.walk(dir), (None, None, []))[2]
 
     file_num = 0
-    for file in files:
-        f_result = reader.readtext(file)
+    with open("data.csv", "w") as f:
+        for file in files:
+            f_result = reader.readtext(dir + "/" + file)
 
-        lines = separate_by_line(f_result)
-        data = lines[0]
+            data = separate_by_line(f_result)[0]
+            pos = get_nearest_start(data)
+            data = data[pos:]
+
+            create_string_data_2(data, f, page=file_num)
+            file_num += 1
 
 
 if __name__ == "__main__":
     # Create an OCR reader object
     reader = easyocr.Reader(['es'])
 
-    # Read text from an image
-    result = reader.readtext('20231009-181355-189-01.jpg')
+    # This is the inout dir
+    input_dir = "20231009-181355-189"
 
-    # Print the extracted text
-    #for detection in result:
-        #print(detection[0], detection[1], detection[2])
-        #print('detection%', detection)
+    # check input arguments
+    if len(sys.argv) > 1:
+        input_dir = sys.argv[1]
 
-    lines = separate_by_line(result)
-    data = lines[0]
-    #print(data)
+    local_path = os.path.abspath(__file__).split("\\")[:-1]
+    local_path = "/".join(local_path) + "/" + input_dir
 
-    header = data[0:14]
-    # lastIndex = (len(data) + 1)
-    #print(lastIndex)
-    rawData = data[15:-1]
-    #print(header)
-    #print(rawData)
-
-    newRawData = removeHeaders(rawHeaders, rawData)
-    newRawData = list(itertools.filterfalse(lambda x: x == "", newRawData))
-    newRawData = [element.replace(",", "") for element in newRawData]
-    # print(newRawData)
-    c = open('newRawData.txt', 'w')
-    c.write(','.join(newRawData))
-    c.close()
-    create_string_data_2(newRawData, page=0)
+    run_all_over_dir(local_path, reader)
