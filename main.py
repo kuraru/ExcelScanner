@@ -84,6 +84,9 @@ def get_nearest_start(data: list[str]) -> int:
 
 
 def write_row(file: TextIO, line: list[str]) -> None:
+    for element in line:
+        if "@" in element:
+            element.replace("@", "")
     this_line = ",".join(line)
     this_line += "," * (len(newHeaders) - len(line)) + "1" + "\n"
     file.write(this_line)
@@ -91,7 +94,6 @@ def write_row(file: TextIO, line: list[str]) -> None:
 
 def create_string_data_2(data: list[str], f: TextIO, page: Optional[int]=0) -> None:
     local_data = data
-    f.write(",".join(newHeaders) + "\n")
     while len(local_data) > 0:
         try:
             pos = get_nearest_stop(local_data)
@@ -118,6 +120,7 @@ def run_all_over_dir(dir: str, reader: easyocr.Reader) -> None:
 
     file_num = 0
     with open("data.csv", "w") as f:
+        f.write(",".join(newHeaders) + "\n")
         for file in files:
             f_result = reader.readtext(dir + "/" + file)
 
