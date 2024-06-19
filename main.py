@@ -8,7 +8,7 @@ import easyocr
 
 MIN_POINTS_PER_LINE = 15
 STOP_WORDS = ["CONCLUIDO"]
-START_FORMATS = ["^[0-9].*/[0-9].*$"]
+START_FORMATS = ["^[0-9].*/[0-9].*$", "^[0-9].*"]
 
 #Headers formato unico para la remision de documentos base de la accion en materia civil
 rawHeaders = ['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
@@ -83,10 +83,15 @@ def get_nearest_start(data: list[str]) -> int:
     raise ValueError("Regex did not find anything.")
 
 
+def filter_chars(line: list[str], chars: dict[str, str]) -> list[str]:
+    new_list = line
+    for char, repl in chars.items():
+        new_list = [element.replace(char, repl) for element in line]
+    return new_list
+
+
 def write_row(file: TextIO, line: list[str]) -> None:
-    for element in line:
-        if "@" in element:
-            element.replace("@", "")
+    line = filter_chars(line, {"@": "O", "{": "", "}": ""})
     this_line = ",".join(line)
     this_line += "," * (len(newHeaders) - len(line)) + "1" + "\n"
     file.write(this_line)
@@ -118,7 +123,7 @@ def create_string_data_2(data: list[str], f: TextIO, page: Optional[int]=0) -> N
 def run_all_over_dir(dir: str, reader: easyocr.Reader) -> None:
     files = next(os.walk(dir), (None, None, []))[2]
 
-    file_num = 0
+    file_num = 1
     with open("data.csv", "w") as f:
         f.write(",".join(newHeaders) + "\n")
         for file in files:
