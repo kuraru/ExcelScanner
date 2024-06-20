@@ -10,7 +10,7 @@ MIN_POINTS_PER_LINE = 15
 STOP_WORDS = ["CONCLUIDO"]
 START_FORMATS = ["^[0-9].*/[0-9].*$", "^[0-9].*"]
 
-#Headers formato unico para la remision de documentos base de la accion en materia civil
+# Headers formato unico para la remision de documentos base de la accion en materia civil
 rawHeaders = ['EXPEDIENTE', 'NÚM DE SOBRES', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO']
 newHeaders = ['EXPEDIENTE', 'ACTOR', 'DEMANDADO', 'MOTIVO DE RESGUARDO', 'PADDING', 'NÚM DE SOBRES']
 
@@ -31,10 +31,12 @@ def separate_by_line(ocr_output: list) -> list:
         lines.append(line)
     return lines
 
+
 def removeHeaders(headers: list, data: list):
     for header in headers:
         data.remove(header)
     return data
+
 
 def create_string_data(data: list):
     itemLineStr = ''
@@ -42,15 +44,15 @@ def create_string_data(data: list):
     f = open("data.csv", "w")
     for dataItem in data:
         print(dataItem)
-        if(countItemsLine == 0 or countItemsLine == 4):
+        if (countItemsLine == 0 or countItemsLine == 4):
             itemLineStr = '' + dataItem
             countItemsLine += 1
-        elif(countItemsLine > 0 and countItemsLine <= 3):
+        elif (countItemsLine > 0 and countItemsLine <= 3):
             itemLineStr = itemLineStr + "," + dataItem
-            countItemsLine += 1 
-            #print('countItemsLine', countItemsLine)
+            countItemsLine += 1
+            # print('countItemsLine', countItemsLine)
         else:
-            #itemLineStr = itemLineStr + ' /'
+            # itemLineStr = itemLineStr + ' /'
             f.write(f"{itemLineStr}\n")
             countItemsLine = 0
             itemLineStr = ''
@@ -91,13 +93,13 @@ def filter_chars(line: list[str], chars: dict[str, str]) -> list[str]:
 
 
 def write_row(file: TextIO, line: list[str]) -> None:
-    line = filter_chars(line, {"@": "O", "{": "", "}": ""})
+    line = filter_chars(line, {"@": "O", "{": "", "}": "", '"': ''})
     this_line = ",".join(line)
     this_line += "," * (len(newHeaders) - len(line)) + "1" + "\n"
     file.write(this_line)
 
 
-def create_string_data_2(data: list[str], f: TextIO, page: Optional[int]=0) -> None:
+def create_string_data_2(data: list[str], f: TextIO, page: Optional[int] = 0) -> None:
     local_data = data
     while len(local_data) > 0:
         try:
