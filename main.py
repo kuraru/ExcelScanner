@@ -122,11 +122,15 @@ def create_string_data_2(data: list[str], f: TextIO, page: Optional[int] = 0) ->
         write_row(f, items)
 
 
+def get_dir_name(full_path: str) -> str:
+    return full_path.split("/")[-1]
+
 def run_all_over_dir(dir: str, reader: easyocr.Reader) -> None:
     files = next(os.walk(dir), (None, None, []))[2]
 
     file_num = 1
-    with open("data.csv", "w") as f:
+    csv_file_name = dir + "/" + get_dir_name(dir) + ".csv"
+    with open(csv_file_name, "w") as f:
         f.write(",".join(newHeaders) + "\n")
         for file in files:
             f_result = reader.readtext(dir + "/" + file)
