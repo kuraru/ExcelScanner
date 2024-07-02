@@ -33,23 +33,24 @@ def rename_files(fullpath_dir: str) -> None:
     amount = len(files)
     digits = get_amount_of_digits_in_number(amount)
     for file in files:
-        back_fn = file.split(" ")[0]
-        front_fn = " ".join(file.split(" ")[1:])
-        str_number = front_fn.split(".")[0].split(" ")[1]
-        back_fn += " conv"
-        extension = front_fn.split(".")[1]
-        try:
-            num = int(str_number)
-        except ValueError as ve:
-            print("element is not possible to convert to number")
-            raise ve
-        new_num = set_num_to_digits(str_number, digits)
-        new_fn = f"{back_fn} {new_num}.{extension}"
-        print(fullpath_dir)
-        print(file)
-        print(new_fn)
-        if new_fn != file:
-            os.rename(fullpath_dir + "/" + file, fullpath_dir + "/" + new_fn)
+        if file.endswith(".jpeg") or file.endswith(".jpg"):
+            back_fn = file.split(" ")[0]
+            front_fn = " ".join(file.split(" ")[1:])
+            str_number = front_fn.split(".")[0].split(" ")[1]
+            back_fn += " conv"
+            extension = front_fn.split(".")[1]
+            try:
+                num = int(str_number)
+            except ValueError as ve:
+                print("element is not possible to convert to number")
+                raise ve
+            new_num = set_num_to_digits(str_number, digits)
+            new_fn = f"{back_fn} {new_num}.{extension}"
+            print(fullpath_dir)
+            print(file)
+            print(new_fn)
+            if new_fn != file:
+                os.rename(fullpath_dir + "/" + file, fullpath_dir + "/" + new_fn)
 
 
 if __name__ == '__main__':
