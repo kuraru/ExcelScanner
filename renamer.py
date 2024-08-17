@@ -6,7 +6,7 @@
 import os
 
 
-def get_all_files(fullpath_dir: str) -> int:
+def get_all_files(fullpath_dir: str) -> list:
     _, _, files = next(os.walk(fullpath_dir))
     return files
 
@@ -30,6 +30,7 @@ def set_num_to_digits(str_num: str, digits: int) -> str:
 
 def rename_files(fullpath_dir: str) -> None:
     files = get_all_files(fullpath_dir)
+    files = files.sort()
     amount = len(files)
     digits = get_amount_of_digits_in_number(amount)
     for file in files:
@@ -54,5 +55,5 @@ def rename_files(fullpath_dir: str) -> None:
 
 
 if __name__ == '__main__':
-    fullpath_dir = "/home/kuraru/development/python/file_renamer/108_SEGUNDO CIVIL DE ECATEPEC_2016-2020_T1_SOBRES/SOBRES_20231009-175812-186"
+    fullpath_dir = "Sobres/130_NOVENO FAMILIAR DE ECATEPEC_2016-2020_T2_SOBRES-20240701T221821Z-001/130_NOVENO FAMILIAR DE ECATEPEC_2016-2020_T2_SOBRES/SOBRES_20231010-131346-104"
     rename_files(fullpath_dir)
